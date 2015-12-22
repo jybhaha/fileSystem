@@ -2,6 +2,7 @@
 
 模拟实现linux文件系统。inode、superBlock......
 
+The simulation of the linux file system.
 
 实现环境：
 
