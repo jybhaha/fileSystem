@@ -16,17 +16,18 @@ FileSystem::FileSystem()
 	{
 		disk->read(i+1,&inodeBlockTable[i]);
 	}
-	
+
 }
 
 int FileSystem::formatDisk()
 {
 
+	//初始化superBlock
 	superBlock.size = Disk::NUM_BLOCKS;
 	superBlock.isize = ISIZE;
 	superBlock.freeList = ISIZE + 1;
-
 	disk->write(&superBlock);
+
 	/* Start allocating the free list
 	 * We really don't need numBlocksNeeded but then, it would cost us atmost 1 block extra, so we don't care
 	 */
@@ -43,11 +44,11 @@ int FileSystem::formatDisk()
 		disk->write(i+1, &inode);
 		disk->read(i+1, &inodeBlockTable[i]);
 	}
-	
+
 	//初始化所有block
 	IndirectBlock freeBlock;
 	while(freeBlockIndex<Disk::NUM_BLOCKS){
-		
+
 		for(int i=0; i<Disk::POINTERS_PER_BLOCK ; ++i){
 			freeBlock.ptr[i] = ZERO;
 			freeBlockCounter++;
@@ -56,7 +57,7 @@ int FileSystem::formatDisk()
 		freeBlockIndex++;
 	}
 
-	
+	//初始化所有file descriptor table
 	for(int i=0; i<MAX_FILES; ++i)
 		fileDescTable[i] = 0;
 
@@ -85,8 +86,8 @@ int FileSystem::open(int inumber)
 			/* Write into memory */
 			disk->read(inodeBlockNumber, &(inodeBlockTable[inodeBlockNumber-1]));
             disk->write(inodeBlockNumber, &(inodeBlockTable[inodeBlockNumber-1]));
-            
-			return i;	
+
+			return i;
 		}
 	}
 
@@ -128,8 +129,6 @@ int FileSystem::seek(int fd, int offset, int whence)
 
 int FileSystem::write(int fd, byte* buffer, int length)
 {
-      
-
 
 	int inumber = fileDescTable[fd];
 	int inodeBlockNumber = ((inumber-1)/4);
@@ -244,53 +243,54 @@ int FileSystem::write(int fd, byte* buffer, int length)
 	disk->write(inodeBlockNumber+1, &inodeBlockTable[inodeBlockNumber]);
 	 byte buf_test[256];
 	disk->read(blockNo, buf_test);
-	
+
 	return origLength;
 }
 
+//找到空白的Block，记录位置
 int FileSystem::allocate()
 {
 
 	int freeList = superBlock.freeList;
 	IndirectBlock freeListBlock;
 	disk->read(freeList, &freeListBlock);
-	
-	
+
+
 	int freeBlock = freeList;
 	int counter = 0;
 	bool wholeBlockZero=false;
-	
+
 
     while(!wholeBlockZero){
-        if(freeListBlock.ptr[counter] != 0){
-			
+			//当该字节不为零，说明本行（即本BLock）有数据，直接寻找下一行
+      if(freeListBlock.ptr[counter] != 0){
+
 			freeListBlock.ptr[counter] = 0;
 			disk->read(freeList, &freeListBlock);
 			freeBlock = ++freeList;
             counter=0;
             continue;
 		}
-		
+
         counter+=1;
-        
-        
+				//当counter==64时，说明本行已经遍历完，本行全部是零，BLock为空
 		if(counter == Disk::POINTERS_PER_BLOCK){
 			freeList++;
 			wholeBlockZero=true;
 			disk->read(freeList, &freeListBlock);
 		}
-        //counter=counter%Disk::POINTERS_PER_BLOCK;
+
     }
 
 	char buffer[Disk::BLOCK_SIZE] = {0};
 	disk->write(freeBlock, buffer);
-    
+
     //修改superBlock
     superBlock.size = Disk::NUM_BLOCKS;
 	superBlock.isize = ISIZE;
 	superBlock.freeList = freeList;
     disk->write(&superBlock);
-    
+
 	return freeBlock;
 }
 
@@ -307,37 +307,38 @@ int FileSystem::free(int blockNo)
 	return 0;
 }
 
+//创建fileSystem，注意创建文件是要修改filenum
 int FileSystem::create(int sizeOfFile)
 {
     fileNum++;
-  
+
 	int inode;
 	InodeBlock inodeBlock;
-    
+
 	/* Search existing Inode Block Table for free entries */
 	for(int i=0; i<ISIZE; ++i){
 		inodeBlock = inodeBlockTable[i];
 		for(int j=0; j<4; ++j)
-			if(inodeBlock.node[j].flags ==0){
-	     
+			if(inodeBlock.node[j].flags ==0){//修改inodeBLockTable
+
 				inodeBlock.node[j].flags = 1;
 				inodeBlock.node[j].owner = 1;
 				inodeBlock.node[j].size = sizeOfFile;
 
 				inode = i*4+j+1;
-				
+
 				inodeBlockTable[i] = inodeBlock;
 				disk->write(i+1, &inodeBlockTable[i]);
-                
+
 				return inode;
 			}
-		
+
 
 	}
 
-	
-    
-    
+
+
+
 	return -1;
 
 

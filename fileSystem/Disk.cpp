@@ -10,8 +10,7 @@ using namespace std;
 
 Disk::Disk()
 {
-
-
+	//creat disk
 	disk_int = new fstream();
 	//disk_int->open("DISK", fstream::out|fstream::in|fstream::binary);
 	disk_int->open("DISK", fstream::out|fstream::in);
@@ -84,7 +83,7 @@ void Disk::write(int blockNo, byte* buffer)
 	disk_int->seekp(blockNo * BLOCK_SIZE);
 	disk_int->write(buffer, BLOCK_SIZE);
 }
-
+//write superBlok;对superBlock进行写操作
 void Disk::write(SuperBlock* block)
 {
 
