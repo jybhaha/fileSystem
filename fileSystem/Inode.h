@@ -12,11 +12,7 @@ class Inode{
 		int owner;
 		int size;
 
-		/* First 10 pointers, from 0 to 9, point to data blocks
-		 * Entry 10 is a single indirect
-		 * Entry 11 is a double indirect
-		 * Entry 12, the last pointer points to a triple indirect block
-		 */
+	
 		int ptr[13];
 };
 
