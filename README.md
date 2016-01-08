@@ -34,6 +34,7 @@ The simulation of the linux file system.
 	};
 
 索引节点索引指针如图所示：
+
 ![](https://raw.githubusercontent.com/jybhaha/fileSystem/master/photes/Inode.jpg)
 
 ###InodeBlock###
