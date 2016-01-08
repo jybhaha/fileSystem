@@ -14,13 +14,63 @@ The simulation of the linux file system.
 
 通过**C++**调用linux系统函数，一块硬盘（创建的一个文件，本程序中是DISK）上实现一个简单的linux文件系统。
 
+##主要数据结构
+
+###Inode###
+索引节点数据结构。
+
+			
+	class Inode{
+	public:
+		Inode();
+
+		static const int SIZE = 64;
+		int flags;						//本节点是否使用标志位
+		int owner;						//所有这是谁，程序中只有模拟功能，并无其他用途，取值0或者1
+		int size;
+
+	
+		int ptr[13];					//索引指针，共有13个。1~9为直接索引10为单词索引，11为二次索引，12为三次所以
+	};
+
+索引节点索引指针如图所示：
+![](https://raw.githubusercontent.com/jybhaha/fileSystem/master/photes/Inode.jpg)
+
+###InodeBlock###
+索引块
+
+	class InodeBlock{
+		public:
+			static const int SIZE = DISK_BLOCK_SIZE/Inode::SIZE;
+			Inode node[SIZE];
+	};
+
+###Indirect###
+	class IndirectBlock{
+	public:
+		static const int SIZE = DISK_BLOCK_SIZE/sizeof(int);
+		int ptr[SIZE];
+	};
+
+###superblock###
+文件系统中第一个数据块
+
+	class SuperBlock{
+
+	public:
+		int size;				//这个硬盘（DISK）中总得Block数目
+		int isize;				//索引节点的数目
+		int freeList;			//未使用数据块位置
+	};
+
+
 
 ##主要流程
 -	创建fileSystem
 -	格式化硬盘（fileSystem::formatDisk）:初始化全部Block，初始化superblock。
 -	创建文件（fileSystem::create）：初始化inodeBlockTable。
 -	打开文件（fileSystem::open（））: 记录已新建文件数
--	写入字符：（fileSystem::write）:寻找空白block（fileSystem::allocate函数），写入。
+-	写入字符：（fileSystem::write）:通过索引节点寻找空白block（fileSystem::allocate函数），写入。
 -	展示：（fileSystem::show()）,通过屏幕打印出来。
 
 ##主要函数
@@ -41,10 +91,6 @@ The simulation of the linux file system.
 -	read() 硬盘读操作。只能读数据的一个block。重载了三次，分别被用来读superblock、inodeblocks、indrection blocks。其中inodeBlocks是一个单位Block，包括4个inode。Inderction blocks 中含有指针指向inodeblocks的指针。
 -	Write() 硬盘写操作。只能写数据的一个block, 重载了三次，分别被用来写superblock、inodeblocks、indrection blocks。
 -	Stop() 停止硬盘运行。
-### **inode.h**
-- inode 定义了一个inode。主要信息有flag、owner等信息。
-- inodeBlock 。主要读写单位
-- inderectBlock 指向inode
 
 。。。
 
